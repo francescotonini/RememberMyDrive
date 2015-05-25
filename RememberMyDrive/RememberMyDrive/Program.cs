@@ -65,12 +65,36 @@ namespace RememberMyKey
             ShowWindow(ThisConsole, showWindow);
         }
 
+        /// <summary>
+        /// Fired when session shuts down
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         static void SystemEvents_SessionEnding(object sender, SessionEndingEventArgs e)
         {
             if (USBDevice.GetAllRemovableDevices().Length != 0)
             {
+                Thread preShutdownCheck = new Thread(PreShutdownCheck);
+                preShutdownCheck.Start();
+
                 MessageBox.Show("Ehi! You forgot your drives on the PC.", "REMEMBER YOUR DRIVE!!!!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
             }
+        }
+
+        /// <summary>
+        /// Check if drives are connected when messagebox "Ehi! You forgot..." is displayed
+        /// </summary>
+        private static void PreShutdownCheck()
+        {
+            // Active wait
+            do
+            {
+                Thread.Sleep(500);
+            } while (USBDevice.GetAllRemovableDevices().Length != 0);
+
+            // All keys disconnected... Time to shutdown!
+            Application.Exit();
+            Environment.Exit(1);
         }
 
         /// <summary>
@@ -82,7 +106,7 @@ namespace RememberMyKey
             
             //Assign icon file to tray icon + contextmenustrip + name
             trayIcon.Text = "Remember my drive";
-            trayIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+            trayIcon.Icon = RememberMyKey.Properties.Resources.icon;
             trayIcon.ContextMenuStrip = new ContextMenuStrip();
 
             //Info button
